@@ -41,7 +41,8 @@ const unitlessCSSProperties = {
   strokeDashoffset: true,
   strokeMiterlimit: true,
   strokeOpacity: true,
-  strokeWidth: true
+  strokeWidth: true,
 };
 
-export const isUnitlessProperty = style => !!unitlessCSSProperties[style];
+// Force property values to be boolean based on existance of value for unitless props
+export const isUnitlessProperty = (style) => !!unitlessCSSProperties[style];
