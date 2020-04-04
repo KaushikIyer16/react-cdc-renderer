@@ -46,3 +46,5 @@ const unitlessCSSProperties = {
 
 // Force property values to be boolean based on existance of value for unitless props
 export const isUnitlessProperty = (style) => !!unitlessCSSProperties[style];
+
+export const logEvent = (reason, description) => console.log("Cause:", reason, "Options:", description || "-");

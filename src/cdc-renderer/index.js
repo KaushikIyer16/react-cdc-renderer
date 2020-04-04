@@ -1,5 +1,5 @@
 import Reconciler from "react-reconciler";
-import { isUnitlessProperty } from "./util";
+import { isUnitlessProperty, logEvent } from "./util";
 
 const shallowDiff = (oldProps, newProps) => {
   const uniqueProps = new Set([
@@ -31,6 +31,7 @@ const setStyle = (domElement, styles) => {
     }
   });
 };
+
 const reconciler = Reconciler({
   supportsMutation: true,
   supportsHydration: false,
@@ -41,32 +42,37 @@ const reconciler = Reconciler({
     props,
     rootContainerInstance,
     hostContext,
-    internalInstanceHandle,
   ) => {
-    console.log(JSON.stringify(hostContext));
-    console.log(props.children, "<><><><><><> ");
-    const el = document.createElement(type);
+    const element = document.createElement(type);
+    const eventLogProps = ["create instance", element];
     Object.keys(props)
       .filter((attr) => !["children"].includes(attr))
       .forEach((attr) => {
         if (attr === "style") {
-          setStyle(el, props[attr]);
+          eventLogProps.push(`attach style prop: ${props[attr]}`);
+          setStyle(element, props[attr]);
         } else if (isEvent(attr)) {
           const eventName = attr.toLowerCase().replace("on", "");
-          el.addEventListener(eventName, props[attr]);
+          eventLogProps.push(`attach event handler ${attr.toLowerCase()} : ${props[attr]}`);
+          element.addEventListener(eventName, props[attr]);
         } else {
-          el[attr] = props[attr];
+          eventLogProps.push(`attach custom prop ${attr} : ${props[attr]}`);
+          element[attr] = props[attr];
         }
       });
-    return el;
+    logEvent(hostContext.reason, eventLogProps);
+    return element;
   },
 
   createTextInstance: (
     text,
     rootContainerInstance,
     hostContext,
-    internalInstanceHandle,
-  ) => document.createTextNode(text),
+  ) => {
+    const eventLogProps = ["create text instance", text];
+    logEvent(hostContext.reason, eventLogProps);
+    return document.createTextNode(text);
+  },
 
   appendChildToContainer: (container, child) => {
     container.appendChild(child);
@@ -85,6 +91,8 @@ const reconciler = Reconciler({
   },
 
   removeChild: (parent, child) => {
+    const eventLogProps = ["remove instance", child];
+    logEvent("child-instrumentation", eventLogProps);
     parent.removeChild(child);
   },
 
@@ -154,7 +162,7 @@ const reconciler = Reconciler({
   },
 
   getRootHostContext: () => ({
-    reason: "instrumentation",
+    reason: "root-host-instrumentation",
   }),
 
   getChildHostContext: () => ({
