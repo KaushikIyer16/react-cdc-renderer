@@ -1,17 +1,19 @@
-CDC stands for change data capture and is a technique used to replicate data between multiple data sources
-but in this project we are looking it as a tool to help in software telemetry and instrumentation.
+## CDC 
 
-## the format of the message:
+Change Data Capture and is a technique used to capture and replicate data between multiple data sources and their different states. We are using that concept in 
+this project as a tool to help in software usage telemetry and instrumentation.
+
+## Format of the change event capture
 
 ```
 {
-  cdcId: <hash that we custom generate>
+  cdcId: <Custom unique hash for event instance>
   before: {
-    type: 'div|img|span',
-    styles:[], (as we wont have the css files if we want to replay the messages torecreate the UI)
-    classNames:[],
+    type: 'div|img|span|custom-tag',
+    styles:[], (For styles that might not be a part of CSS class definitions)
+    classNames:[], (Class names to recreate UI using CSS style definitions)
     props:[],
-    children:[], (only the list of hashes)
+    children:[], (Only the list of hashes)
     listeners: {},
   },
   after: {
@@ -22,20 +24,20 @@ but in this project we are looking it as a tool to help in software telemetry an
     children:[],
     listeners: {},
   },
-  operation: "c|u|d"
+  operation: "C|U|D" (Map to Create, Update and Delete operations)
 }
 ```
 
-so the operations can be split into:
+## Operations captured and state change
 
-- creation of new element: before is null, after is the value of the host node,
-- updation of element: before contains value before the change, same logic for after.
-- deletion of element: before is the value of the node, after is null.
+- creation of new element: before is null, after is the value of the host node.
+- updation of element: before contains node value before the update, after contains updated node values.
+- deletion of element: before contains node value, after is null.
 
-## key problems which has not been addressed/solved:
+## Milestones for beta release
 
-- we have to extend the spec to native applications.
-- we have to write factory methods for various host environments.
-- we have to build the message replayer.
-- we need to push these events to a server in a continuous fashion
-- figure out how to attach network calls associated with host change if possible.
+- Extending the spec defined to react-native applications and other frameworks.
+- Write factory methods for various host environments.
+- Building message replayer for recreating the UI using event logs.
+- Create event capture and storage server.
+- Attaching network calls for event logging at remote location
