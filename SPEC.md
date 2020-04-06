@@ -9,7 +9,7 @@ this project as a tool to help in software usage telemetry and instrumentation.
 {
   cdcId: <Custom unique hash for event instance>
   before: {
-    type: 'div|img|span|custom-tag',
+    type: 'div|img|span|html-tag',
     styles:[], (For styles that might not be a part of CSS class definitions)
     classNames:[], (Class names to recreate UI using CSS style definitions)
     props:[],
@@ -17,7 +17,7 @@ this project as a tool to help in software usage telemetry and instrumentation.
     listeners: {},
   },
   after: {
-    type: 'div|img|span',
+    type: 'div|img|span|html-tag',
     styles:[],
     classNames:[],
     props:[],
