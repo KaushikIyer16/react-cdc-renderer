@@ -13,6 +13,7 @@ const shallowDiff = (oldProps, newProps) => {
   return changedProps;
 };
 
+// Method to check if attribute type is a event handler
 const isEvent = (propName) => propName.startsWith("on") && window.hasOwnProperty(propName.toLowerCase());
 
 const setStyle = (domElement, styles) => {
@@ -20,13 +21,14 @@ const setStyle = (domElement, styles) => {
     const rawValue = styles[name];
     const isEmpty = rawValue === null || typeof rawValue === "boolean" || rawValue === "";
 
-    // Unset the style to its default values using an empty string
-    if (isEmpty) domElement.style[name] = "";
-    else {
+    // Unset the style to its default values using an empty string if style value is empty
+    if (isEmpty) {
+      domElement.style[name] = "";
+    } else {
+      // If property has no units, set it as raw value, else add px by default unit
       const value = typeof rawValue === "number" && !isUnitlessProperty(name)
-        ? `${rawValue}px`
+        ? `${rawValue}px` // TODO: Remove px hardcoding and support custom units
         : rawValue;
-
       domElement.style[name] = value;
     }
   });
@@ -109,8 +111,8 @@ const reconciler = Reconciler({
     type,
     oldProps,
     newProps,
-    rootContainerInstance,
-    currentHostContext,
+    // Determine if update is required for nodes based on the diff
+    // of the old and new props on the node
   ) => shallowDiff(oldProps, newProps),
 
   commitUpdate: (
@@ -119,10 +121,11 @@ const reconciler = Reconciler({
     type,
     oldProps,
     newProps,
-    finishedWork,
   ) => {
+    // For each of the child nodes that require an update, update the props
+    // on the domElement received
     updatePayload.forEach((propName) => {
-      // children changes is done by the other methods like `commitTextUpdate`
+      // If prop is a child element, update the base domElement and return
       if (propName === "children") {
         const propValue = newProps[propName];
         if (typeof propValue === "string" || typeof propValue === "number") {
@@ -132,30 +135,32 @@ const reconciler = Reconciler({
       }
 
       if (propName === "style") {
-        // Return a diff between the new and the old styles
+        // Get a diff between the new and the old styles
         const styleDiffs = shallowDiff(oldProps.style, newProps.style);
+        // Accumulate the new styles to be applied to the element
         const finalStyles = styleDiffs.reduce((acc, styleName) => {
-          // Style marked to be unset
-          if (!newProps.style[styleName]) acc[styleName] = "";
-          else acc[styleName] = newProps.style[styleName];
-
+          // If new styles are empty for an existing style, it is marked to be unset
+          if (!newProps.style[styleName]) {
+            acc[styleName] = "";
+          } else {
+            acc[styleName] = newProps.style[styleName];
+          }
           return acc;
         }, {});
-
+        // Set the styles for the element
         setStyle(domElement, finalStyles);
       } else if (newProps[propName] || typeof newProps[propName] === "number") {
+        // If prop is a event handler, remove the previous handler and set the new one
         if (isEvent(propName)) {
           const eventName = propName.toLowerCase().replace("on", "");
           domElement.removeEventListener(eventName, oldProps[propName]);
           domElement.addEventListener(eventName, newProps[propName]);
         } else {
-          /* difference between setAttribute and the method used in createInstance */
+          // For generic non-event and style props, set it as attribute
           domElement.setAttribute(propName, newProps[propName]);
         }
-      } else if (isEvent(propName)) {
-        const eventName = propName.toLowerCase().replace("on", "");
-        domElement.removeEventListener(eventName, oldProps[propName]);
       } else {
+        // Remove the attribute if no conditions for prop types are satisfied
         domElement.removeAttribute(propName);
       }
     });
@@ -171,11 +176,11 @@ const reconciler = Reconciler({
 
   shouldSetTextContent: () => false,
 
-  prepareForCommit: () => {},
+  prepareForCommit: () => { },
 
-  resetAfterCommit: () => {},
+  resetAfterCommit: () => { },
 
-  finalizeInitialChildren: () => {},
+  finalizeInitialChildren: () => { },
 });
 
 export default {
