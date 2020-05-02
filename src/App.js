@@ -6,14 +6,13 @@ import "./App.css";
 function App() {
   const [showLogo, setShowLogo] = useState(true);
   const [color, setColor] = useState("red");
+  const [text, setText] = useState("Text here updates");
 
   useEffect(() => {
     const colors = ["red", "blue", "green"];
-    let i = 0;
-    const interval = setInterval(() => {
-      setColor(colors[(i += 1) % 3]);
-    }, 1000);
-    return () => clearInterval(interval);
+    setColor(colors[2]);
+    setText("Text here updated already");
+    return () => {};
   }, []);
 
   return (
@@ -25,9 +24,7 @@ function App() {
           onClick={(_) => setShowLogo((showLogo) => !showLogo)}
           style={{ backgroundColor: color }}
         >
-          Edit
-          <code>src/App.js</code>
-          and save to reload.
+          {text}
         </p>
         <a
           className="App-link"

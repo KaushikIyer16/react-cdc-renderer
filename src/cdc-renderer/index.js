@@ -20,7 +20,6 @@ const setStyle = (domElement, styles) => {
   Object.keys(styles).forEach((name) => {
     const rawValue = styles[name];
     const isEmpty = rawValue === null || typeof rawValue === "boolean" || rawValue === "";
-
     // Unset the style to its default values using an empty string if style value is empty
     if (isEmpty) {
       domElement.style[name] = "";
@@ -42,39 +41,41 @@ const reconciler = Reconciler({
   createInstance: (
     type,
     props,
-    rootContainerInstance,
-    hostContext,
   ) => {
     const element = document.createElement(type);
-    const eventLogProps = ["create instance", element];
+    const logEventObject = {
+      type,
+      styles: {},
+      className: "",
+      props: {},
+      children: [],
+      listeners: {},
+    };
     Object.keys(props)
       .filter((attr) => !["children"].includes(attr))
       .forEach((attr) => {
         if (attr === "style") {
-          eventLogProps.push(`attach style prop: ${props[attr]}`);
+          logEventObject.styles = props[attr];
           setStyle(element, props[attr]);
         } else if (isEvent(attr)) {
           const eventName = attr.toLowerCase().replace("on", "");
-          eventLogProps.push(`attach event handler ${attr.toLowerCase()} : ${props[attr]}`);
+          logEventObject.listeners[eventName] = props[attr];
           element.addEventListener(eventName, props[attr]);
+        } else if (attr === "className") {
+          logEventObject.className = props[attr];
+          element[attr] = props[attr];
         } else {
-          eventLogProps.push(`attach custom prop ${attr} : ${props[attr]}`);
+          logEventObject.props[attr] = props[attr];
           element[attr] = props[attr];
         }
       });
-    logEvent(hostContext.reason, eventLogProps);
+    logEvent("C", null, logEventObject);
     return element;
   },
 
   createTextInstance: (
     text,
-    rootContainerInstance,
-    hostContext,
-  ) => {
-    const eventLogProps = ["create text instance", text];
-    logEvent(hostContext.reason, eventLogProps);
-    return document.createTextNode(text);
-  },
+  ) => document.createTextNode(text),
 
   appendChildToContainer: (container, child) => {
     container.appendChild(child);
@@ -93,8 +94,6 @@ const reconciler = Reconciler({
   },
 
   removeChild: (parent, child) => {
-    const eventLogProps = ["remove instance", child];
-    logEvent("child-instrumentation", eventLogProps);
     parent.removeChild(child);
   },
 
@@ -166,26 +165,30 @@ const reconciler = Reconciler({
     });
   },
 
-  getRootHostContext: () => ({
-    reason: "root-host-instrumentation",
-  }),
+  commitMount: (domElement) => {
+    domElement.focus();
+  },
 
-  getChildHostContext: () => ({
-    reason: "child-instrumentation",
-  }),
+  commitTextUpdate(textInstance, oldText, newText) {
+    textInstance.nodeValue = newText;
+  },
+
+  getRootHostContext: () => {},
+
+  getChildHostContext: () => {},
 
   shouldSetTextContent: () => false,
 
-  prepareForCommit: () => { },
+  prepareForCommit: () => {},
 
-  resetAfterCommit: () => { },
+  resetAfterCommit: () => {},
 
-  finalizeInitialChildren: () => { },
+  finalizeInitialChildren: (instance, types, newProps) => newProps.autofocus,
 });
 
 export default {
-  render: (element, root) => {
+  render: (element, root, callback) => {
     const container = reconciler.createContainer(root, false, false);
-    reconciler.updateContainer(element, container, null, null);
+    reconciler.updateContainer(element, container, null, callback);
   },
 };
